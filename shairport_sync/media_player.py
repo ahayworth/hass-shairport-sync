@@ -120,7 +120,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
             self.async_write_ha_state()
 
         @callback
-        def active_ended(_):
+        def active_end(_):
             """Handle the active_end MQTT message."""
             _LOGGER.debug("active_end")
             self._player_state = STATE_IDLE
