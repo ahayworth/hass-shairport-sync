@@ -19,7 +19,7 @@ from homeassistant.components.media_player.const import (
 )
 from homeassistant.components.mqtt import async_publish, async_subscribe
 from homeassistant.components.mqtt.util import valid_publish_topic
-from homeassistant.const import CONF_NAME, STATE_PAUSED, STATE_PLAYING
+from homeassistant.const import CONF_NAME, STATE_PAUSED, STATE_PLAYING, STATE_IDLE
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
@@ -83,7 +83,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
         self._name = name
         self._base_topic = topic
         self._remote_topic = f"{self._base_topic}/{TOP_LEVEL_TOPIC_REMOTE}"
-        self._player_state = STATE_PAUSED
+        self._player_state = STATE_IDLE
         self._title = None
         self._artist = None
         self._media_image = None
@@ -118,6 +118,16 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
             self.async_write_ha_state()
 
         @callback
+        def active_ended(_):
+            """Handle the active_end MQTT message."""
+            _LOGGER.debug("active_end")
+            self._player_state = STATE_IDLE
+            self._title = None
+            self._artist = None
+            self._media_image = None
+            self.async_write_ha_state()
+
+        @callback
         def artist_updated(message):
             """Handle the artist updated MQTT message."""
             self._artist = message.payload
@@ -146,9 +156,11 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
         topic_map = {
             TOP_LEVEL_TOPIC_PLAY_START: (play_started, "utf-8"),
             TOP_LEVEL_TOPIC_PLAY_END: (play_ended, "utf-8"),
+            TOP_LEVEL_TOPIC_PLAY_RESUME: (play_started, "utf-8"),
             TOP_LEVEL_TOPIC_ARTIST: (artist_updated, "utf-8"),
             TOP_LEVEL_TOPIC_TITLE: (title_updated, "utf-8"),
             TOP_LEVEL_TOPIC_COVER: (artwork_updated, None),
+            TOP_LEVEL_TOPIC_ACTIVE_END: (active_end, "utf-8"),
         }
 
         for (top_level_topic, (topic_callback, encoding)) in topic_map.items():
