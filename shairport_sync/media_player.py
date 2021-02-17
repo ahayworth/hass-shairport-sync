@@ -12,7 +12,7 @@ from homeassistant.components.media_player.const import (
     SUPPORT_NEXT_TRACK,
     SUPPORT_PAUSE,
     SUPPORT_PLAY,
-    SUPPORT_PLAY_MEDIA,
+    SUPPORT_PLAY_MEDIA,  # ?
     SUPPORT_PREVIOUS_TRACK,
     SUPPORT_STOP,
     SUPPORT_VOLUME_STEP,
@@ -40,6 +40,7 @@ from .const import (
     TOP_LEVEL_TOPIC_ACTIVE_END,
     TOP_LEVEL_TOPIC_REMOTE,
     TOP_LEVEL_TOPIC_TITLE,
+    TOP_LEVEL_TOPIC_VOLUME,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -89,6 +90,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
         self._title = None
         self._artist = None
         self._media_image = None
+        self._volume = None
         self._subscriptions = []
 
     async def async_added_to_hass(self):
@@ -130,6 +132,12 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
             self.async_write_ha_state()
 
         @callback
+        def volume_updated(_):
+            """Handle the volume MQTT message."""
+            raw = float(message.payload.split(",")[0])
+            self._volume = (raw / 30) + 1
+
+        @callback
         def artist_updated(message):
             """Handle the artist updated MQTT message."""
             self._artist = message.payload
@@ -163,6 +171,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
             TOP_LEVEL_TOPIC_TITLE: (title_updated, "utf-8"),
             TOP_LEVEL_TOPIC_COVER: (artwork_updated, None),
             TOP_LEVEL_TOPIC_ACTIVE_END: (active_end, "utf-8"),
+            TOP_LEVEL_TOPIC_VOLUME: (volume_updated, "utf-8"),
         }
 
         for (top_level_topic, (topic_callback, encoding)) in topic_map.items():
@@ -229,6 +238,10 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
     @property
     def device_class(self):
         return DEVICE_CLASS_SPEAKER
+
+    @property
+    def volume_level(self):
+        return self._volume
 
     # is_on
     # async def async_turn_on(self):  # async?
