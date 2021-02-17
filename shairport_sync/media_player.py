@@ -136,6 +136,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
             """Handle the volume MQTT message."""
             raw = float(message.payload.split(",")[0])
             self._volume = (raw / 30) + 1
+            self.async_write_ha_state()
 
         @callback
         def artist_updated(message):
