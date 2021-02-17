@@ -33,6 +33,7 @@ from .const import (
     COMMAND_VOLUME_UP,
     CONF_TOPIC,
     TOP_LEVEL_TOPIC_ARTIST,
+    TOP_LEVEL_TOPIC_ALBUM,
     TOP_LEVEL_TOPIC_COVER,
     TOP_LEVEL_TOPIC_PLAY_END,
     TOP_LEVEL_TOPIC_PLAY_START,
@@ -89,6 +90,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
         self._player_state = STATE_IDLE
         self._title = None
         self._artist = None
+        self._album = None
         self._media_image = None
         self._volume = None
         self._subscriptions = []
@@ -139,6 +141,12 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
             self.async_write_ha_state()
 
         @callback
+        def album_updated(message):
+            """Handle the album updated MQTT message."""
+            self._album = message.payload
+            self.async_write_ha_state()
+
+        @callback
         def artist_updated(message):
             """Handle the artist updated MQTT message."""
             self._artist = message.payload
@@ -169,6 +177,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
             TOP_LEVEL_TOPIC_PLAY_END: (play_ended, "utf-8"),
             TOP_LEVEL_TOPIC_PLAY_RESUME: (play_started, "utf-8"),
             TOP_LEVEL_TOPIC_ARTIST: (artist_updated, "utf-8"),
+            TOP_LEVEL_TOPIC_ALBUM: (album_updated, "utf-8"),
             TOP_LEVEL_TOPIC_TITLE: (title_updated, "utf-8"),
             TOP_LEVEL_TOPIC_COVER: (artwork_updated, None),
             TOP_LEVEL_TOPIC_ACTIVE_END: (active_end, "utf-8"),
@@ -221,6 +230,12 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
         """Artist of current playing media, music track only."""
         _LOGGER.debug("Getting media artist: %s", self._artist)
         return self._artist
+
+    @property
+    def media_album(self):
+        """Album name of current playing media, music track only."""
+        _LOGGER.debug("Getting media artist: %s", self._artist)
+        return self._album
 
     @property
     def media_image_hash(self):
