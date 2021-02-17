@@ -234,7 +234,7 @@ class ShairportSyncMediaPlayer(MediaPlayerEntity):
     @property
     def media_album(self):
         """Album name of current playing media, music track only."""
-        _LOGGER.debug("Getting media artist: %s", self._artist)
+        _LOGGER.debug("Getting media album: %s", self._album)
         return self._album
 
     @property
